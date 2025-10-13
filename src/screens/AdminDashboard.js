@@ -27,7 +27,7 @@ const AdminDashboard = () => {
               <MetricCard index={1} title="Products In Stock" value={productsInStock} icon="cube-outline" color="#4caf50" />
             </View>
             <View style={{ flexDirection: 'row' }}>
-              <MetricCard index={2} title="Low Stock" value={lowStock} icon="alert-circle-outline" color="#f44336" />
+              <MetricCard index={2} title="Low Stock" value={lowStock} icon="alert-circle-outline" color="#f44336" onPress={() => navigation.navigate('MainApp', { screen: 'Low Stocks' })} />
               <MetricCard index={3} title="Today's Revenue" value={`$${todaysRevenue}`} icon="calendar-today" color="#2196f3" />
             </View>
 

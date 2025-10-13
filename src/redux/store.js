@@ -23,7 +23,7 @@ const initialProductState = {
   list: [], // stores all products
 };
 
-const productSlice = createSlice({
+const productSlices = createSlice({
   name: 'products',
   initialState: initialProductState,
   reducers: {
@@ -44,10 +44,10 @@ const productSlice = createSlice({
 const store = configureStore({
   reducer: {
     admin: adminSlice.reducer,
-    products: productSlice.reducer,
+    products: productSlices.reducer,
     auth: authReducer,
   },
 });
 
-export const { addProduct, deleteProduct, editProduct } = productSlice.actions;
+export const { addProduct, deleteProduct, editProduct } = productSlices.actions;
 export default store;

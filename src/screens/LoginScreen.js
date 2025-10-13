@@ -15,19 +15,29 @@ const LoginScreen = () => {
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState('');
 
-  useEffect(() => {
-    // Auto-login if user data exists
+ useEffect(() => {
     const checkUser = async () => {
       const storedUser = await AsyncStorage.getItem('userData');
       const token = await AsyncStorage.getItem('userToken');
+
       if (storedUser && token) {
-        dispatch(setUser(JSON.parse(storedUser)));
-        navigation.replace('MainApp');
+        const user = JSON.parse(storedUser);
+        dispatch(setUser(user));
+
+        // Navigate to respective dashboard
+        if (user.role === 'admin') {
+          navigation.replace('AdminDrawer');
+        } else if (user.role === 'staff') {
+          navigation.replace('StaffDrawer');
+        } else {
+          navigation.replace('MainApp'); // fallback
+        }
       }
     };
     checkUser();
   }, []);
 
+  // 🔐 Login handler
   const handleLogin = async () => {
     if (!email || !password) {
       setSnackbar('Please fill in all fields.');
@@ -36,17 +46,29 @@ const LoginScreen = () => {
 
     setLoading(true);
     try {
-      // Fake auth check
-      const storedUser = await AsyncStorage.getItem('userData');
-      const user = storedUser ? JSON.parse(storedUser) : null;
+      // Fake login (can be replaced by backend API later)
+      let user = null;
 
-      if (user && user.email === email) {
-        await AsyncStorage.setItem('userToken', 'demoToken');
-        dispatch(setUser(user));
-        navigation.replace('MainApp');
+      if (email === 'admin@shop.com' && password === 'admin123') {
+        user = { name: 'Admin User', email, role: 'admin' };
+      } else if (email === 'staff@shop.com' && password === 'staff123') {
+        user = { name: 'Staff Member', email, role: 'staff' };
       } else {
         setSnackbar('Invalid credentials.');
+        setLoading(false);
+        return;
       }
+
+      await AsyncStorage.setItem('userData', JSON.stringify(user));
+      await AsyncStorage.setItem('userToken', 'demoToken');
+      dispatch(setUser(user));
+
+      if (user.role === 'admin') {
+        navigation.replace('AdminDrawer');
+      } else {
+        navigation.replace('StaffDrawer');
+      }
+
     } catch (error) {
       console.error(error);
       setSnackbar('Login failed. Please try again.');
@@ -54,7 +76,6 @@ const LoginScreen = () => {
       setLoading(false);
     }
   };
-
   return (
     <ImageBackground
       source={{ uri: 'https://i.imgur.com/hg4sYBt.jpg' }}

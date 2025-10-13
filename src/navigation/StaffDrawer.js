@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, Alert } from 'react-native';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
-import AdminDashboard from '../screens/AdminDashboard';
-import AddProduct from '../screens/AddProduct';
-import ViewProduct from '../screens/ViewProduct';
-import LowStockScreen from '../screens/LowStockScreen';
+import BillingDashboard from '../screens/BillingDashboard';
+import BillingScreen from '../screens/BillingScreen';
+import TransactionHistoryScreen from '../screens/TransactionHistoryScreen';
+import BillingQRScreen from '../screens/BillingQRScreen';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
@@ -12,7 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 const Drawer = createDrawerNavigator();
 
 // Custom Drawer Content
-function CustomDrawerContent(props) {
+function CustomStaffDrawerContent(props) {
   const navigation = useNavigation();
 
   const handleLogout = async () => {
@@ -81,7 +81,7 @@ function CustomDrawerContent(props) {
 export default function DrawerNavigator() {
   return (
     <Drawer.Navigator
-      drawerContent={(props) => <CustomDrawerContent {...props} />}
+      drawerContent={(props) => <CustomStaffDrawerContent {...props} />}
       screenOptions={{
         headerShown: true,
         drawerStyle: { backgroundColor: '#f9f9f9', width: 260 },
@@ -110,3 +110,40 @@ const styles = StyleSheet.create({
   menu: { flex: 1, paddingTop: 10 },
   footer: { borderTopWidth: 1, borderTopColor: '#ccc', paddingBottom: 10 },
 });
+
+
+const StaffDrawer = () => {
+  return (
+    <Drawer.Navigator
+      initialRouteName="BillingDashboard"
+      screenOptions={{
+        headerShown: true,
+        headerStyle: { backgroundColor: '#4CAF50' },
+        headerTintColor: '#fff',
+      }}
+    >
+      <Drawer.Screen
+        name="BillingDashboard"
+        component={BillingDashboard}
+        options={{ title: 'Dashboard' }}
+      />
+      <Drawer.Screen
+        name="BillingScreen"
+        component={BillingScreen}
+        options={{ title: 'New Bill' }}
+      />
+    <Drawer.Screen
+        name="BillingQRScreen"
+        component={BillingQRScreen}
+        options={{ title: 'Scan Bill' }}
+      />
+      <Drawer.Screen
+        name="TransactionHistory"
+        component={TransactionHistoryScreen}
+        options={{ title: 'Transaction History' }}
+      />
+    </Drawer.Navigator>
+  );
+};
+
+export default StaffDrawer;
