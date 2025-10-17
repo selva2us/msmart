@@ -9,12 +9,13 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { Button } from 'react-native-paper';
+import { Button,Checkbox } from 'react-native-paper';
 import { useDispatch } from 'react-redux';
 import { addProduct, editProduct } from '../redux/store'; // adjust path if needed
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRoute } from '@react-navigation/native';
+import { addProduct as apiAddProduct, updateProduct as apiUpdateProduct } from '../api/productApi'; // Import API functions
 
 const AddProduct = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -23,18 +24,26 @@ const AddProduct = ({ navigation }) => {
 
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
-  const [quantity, setQuantity] = useState('');
-  const [category, setCategory] = useState('');
+  const [stockQuantity, setStockQuantity] = useState('');
+  const [category, setCategory] = useState('1');
+  const [lowStockThreshold, setLowStockThreshold] = useState('10');
+  const [barcode, setBarcode] = useState('');
+  const [brand, setBrand] = useState('1');
   const [image, setImage] = useState(null);
+  const [active, setActive] = useState(true);
 
   // Pre-fill form if editing
   useEffect(() => {
     if (productToEdit) {
       setName(productToEdit.name);
       setPrice(String(productToEdit.price));
-      setQuantity(String(productToEdit.quantity));
+      setStockQuantity(String(productToEdit.setStockQuantity));
       setCategory(productToEdit.category);
       setImage(productToEdit.image);
+      setLowStockThreshold(String(productToEdit.lowStockThreshold));
+      setBarcode(productToEdit.barcode);
+      setBrand(productToEdit.brand);
+      setActive(productToEdit.active);
     }
   }, [productToEdit]);
 
@@ -56,23 +65,40 @@ const AddProduct = ({ navigation }) => {
     if (!result.canceled) setImage(result.assets[0].uri);
   };
 
-  const saveProduct = () => {
-    if (!name || !price || !quantity || !category) {
+  const saveProduct = async ()=> {
+    if (!name || !price || !stockQuantity || !category || !brand || !lowStockThreshold || !barcode) {
       Alert.alert('Validation', 'Please fill all fields');
       return;
     }
+    const productData = {
+      barcode,
+      stockQuantity,
+      active,
+      brand: { id: brand, name: 'Brand Name' }, // Adjust brand data if needed
+      price,
+      lowStockThreshold,
+      name,
+      category: { id: category, name: 'Category Name' }, // Adjust category if needed
+    };
+    try {
+      let response;
+      if (productToEdit) {
+        // If editing product, use update API
+        response = await apiUpdateProduct(productToEdit.id, productData, image);
+        dispatch(editProduct({ ...productToEdit, ...response }));
+        Alert.alert('Success', 'Product updated!');
+      } else {
+        // If adding a new product, use add API
+        response = await apiAddProduct(productData, image);
+        dispatch(addProduct(response));
+        Alert.alert('Success', `Product "${name}" added!`);
+      }
 
-    if (productToEdit) {
-      dispatch(
-        editProduct({ id: productToEdit.id, name, price, quantity, category, image })
-      );
-      Alert.alert('Success', 'Product updated!');
-    } else {
-      dispatch(addProduct({ name, price, quantity, category, image }));
-      Alert.alert('Success', `Product "${name}" added!`);
+      navigation.navigate('MainApp', { screen: 'View Products' });
+    ``} catch (error) {
+      console.error('Error:', error);
+      Alert.alert('Error', 'There was an error saving the product. Please try again.');
     }
-
-    navigation.navigate('MainApp', { screen: 'View Products' });
   };
 
   return (
@@ -133,11 +159,42 @@ const AddProduct = ({ navigation }) => {
               placeholder="Enter quantity"
               placeholderTextColor="#999"
               keyboardType="numeric"
-              value={quantity}
-              onChangeText={setQuantity}
+              value={stockQuantity}
+              onChangeText={setStockQuantity}
             />
           </View>
 
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>LowStockThreshold</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter threshold"
+              placeholderTextColor="#999"
+              value={lowStockThreshold}
+              onChangeText={setLowStockThreshold}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Barcode</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter barcode"
+              placeholderTextColor="#999"
+              keyboardType="numeric"
+              value={barcode}
+              onChangeText={setBarcode}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Brand</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter brand"
+              placeholderTextColor="#999"
+              value={brand}
+              onChangeText={setBrand}
+            />
+          </View>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Category</Text>
             <TextInput
@@ -148,6 +205,16 @@ const AddProduct = ({ navigation }) => {
               onChangeText={setCategory}
             />
           </View>
+            {/* Checkbox from react-native-paper */}
+            <View style={styles.checkboxContainer}>
+              <Checkbox
+                status={active ? 'checked' : 'unchecked'}
+                onPress={() => setActive(!active)}
+                color="#6200ee" // You can change the color to match your app theme
+              />
+              <Text style={styles.checkboxLabel}>Is Active</Text>
+            </View>
+
 
           {/* Buttons */}
           <Button

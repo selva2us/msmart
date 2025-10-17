@@ -7,14 +7,14 @@ const BillingDashboard = ({ navigation }) => (
 
     <TouchableOpacity
       style={styles.card}
-      onPress={() => navigation.navigate('BillingQRScreen')}
+      onPress={() => navigation.navigate('StaffApp', { screen: 'Scan Bill' })}
     >
       <Text style={styles.cardText}>🧾 Create New Bill</Text>
     </TouchableOpacity>
 
     <TouchableOpacity
       style={styles.card}
-      onPress={() => navigation.navigate('TransactionHistory')}
+      onPress={() => navigation.navigate('StaffApp', { screen: 'Transaction History' })}
     >
       <Text style={styles.cardText}>📜 Transaction History</Text>
     </TouchableOpacity>

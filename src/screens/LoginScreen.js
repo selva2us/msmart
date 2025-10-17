@@ -26,9 +26,9 @@ const LoginScreen = () => {
 
         // Navigate to respective dashboard
         if (user.role === 'admin') {
-          navigation.replace('AdminDrawer');
+          navigation.replace('MainApp');
         } else if (user.role === 'staff') {
-          navigation.replace('StaffDrawer');
+          navigation.replace('StaffApp');
         } else {
           navigation.replace('MainApp'); // fallback
         }
@@ -64,9 +64,9 @@ const LoginScreen = () => {
       dispatch(setUser(user));
 
       if (user.role === 'admin') {
-        navigation.replace('AdminDrawer');
+        navigation.replace('MainApp');
       } else {
-        navigation.replace('StaffDrawer');
+        navigation.replace('StaffApp');
       }
 
     } catch (error) {

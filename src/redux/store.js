@@ -1,5 +1,6 @@
 import { configureStore, createSlice } from '@reduxjs/toolkit';
 import authReducer from './authSlice'; // add this
+import productsReducer from './productsSlice'; // add this
 
 // ----------------- Admin Slice -----------------
 const initialAdminState = {

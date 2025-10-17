@@ -26,6 +26,14 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "bac4325e-7026-4fab-baba-d5e1157428c5"
+      }
+    },
+    "plugins": [
+      "expo-barcode-scanner"
+    ]
   }
 }

@@ -35,5 +35,17 @@ rootProject.name = 'SuperMarket'
 
 expoAutolinking.useExpoVersionCatalog()
 
+// --- Expo Modules Core fix (manual path) ---
+def expoModulesCoreGradle = "${rootDir}/../node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle"
+
+if (file(expoModulesCoreGradle).exists()) {
+    println("✅ Applying ExpoModulesCore Gradle plugin from: " + expoModulesCoreGradle)
+    apply from: new File(expoModulesCoreGradle)
+} else {
+    println("⚠️ Skipping Expo modules linking. File not found at: " + expoModulesCoreGradle)
+}
+
+// --- Default React Native include ---
+
 include ':app'
 includeBuild(expoAutolinking.reactNativeGradlePlugin)

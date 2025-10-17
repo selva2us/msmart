@@ -5,6 +5,9 @@ buildscript {
     google()
     mavenCentral()
   }
+  ext {
+    expoVersion = '54.0.13'  // Replace with your installed version
+  }
   dependencies {
     classpath('com.android.tools.build:gradle')
     classpath('com.facebook.react:react-native-gradle-plugin')
@@ -22,3 +25,29 @@ allprojects {
 
 apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+        
+    }
+    dependencies {
+        classpath('com.android.tools.build:gradle')
+        classpath('com.facebook.react:react-native-gradle-plugin')
+        classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://www.jitpack.io' }
+         // Expo modules     
+         //maven { url "https://repo.expo.dev/maven"
+           // allowInsecureProtocol = true } // keep as fallback
+    }
+}
+
+apply plugin: "com.facebook.react.rootproject"
+apply plugin: "expo-root-project"

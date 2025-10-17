@@ -12,7 +12,7 @@ const AppStack = () => (
     <Stack.Screen name="Login" component={LoginScreen} />
     <Stack.Screen name="Register" component={RegisterScreen} />
     <Stack.Screen name="MainApp" component={DrawerNavigator} />
-    <Stack.Screen name="StaffDrawer" component={StaffDrawer} />
+    <Stack.Screen name="StaffApp" component={StaffDrawer} />
   </Stack.Navigator>
 );
 
