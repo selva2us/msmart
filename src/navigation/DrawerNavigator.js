@@ -5,6 +5,8 @@ import AdminDashboard from '../screens/AdminDashboard';
 import AddProduct from '../screens/AddProduct';
 import ViewProduct from '../screens/ViewProduct';
 import LowStockScreen from '../screens/LowStockScreen';
+import BrandScreen from '../screens/BrandScreen';
+import CategoryScreen from '../screens/CategoryScreen';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
@@ -58,6 +60,17 @@ function CustomDrawerContent(props) {
           icon={({ color, size }) => <Icon name="cart" color={color} size={size} />}
           onPress={() => navigation.navigate('MainApp', { screen: 'View Products' })}
         />
+        <DrawerItem
+          label="Manage Brand"
+          icon={({ color, size }) => <Icon name="cart" color={color} size={size} />}
+          onPress={() => navigation.navigate('MainApp', { screen: 'Add Brand' })}
+        />
+
+        <DrawerItem
+          label="Manage Category"
+          icon={({ color, size }) => <Icon name="cart" color={color} size={size} />}
+          onPress={() => navigation.navigate('MainApp', { screen: 'Add Category' })}
+        />
 
         <DrawerItem
           label="Low Stocks"
@@ -92,6 +105,8 @@ export default function DrawerNavigator() {
       <Drawer.Screen name="Dashboard" component={AdminDashboard} />
       <Drawer.Screen name="Add Product" component={AddProduct} />
       <Drawer.Screen name="View Products" component={ViewProduct} />
+       <Drawer.Screen name="Add Brand" component={BrandScreen} />
+       <Drawer.Screen name="Add Category" component={CategoryScreen} />
       <Drawer.Screen name="Low Stocks" component={LowStockScreen} />
     </Drawer.Navigator>
   );

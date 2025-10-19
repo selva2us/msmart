@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   FlatList,
   ActivityIndicator,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Button } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
 import {
@@ -43,10 +44,11 @@ const ViewProduct = ({ navigation }) => {
     }
   };
 
-  useEffect(() => {
+ useFocusEffect(
+  useCallback(() => {
     fetchProducts();
-  }, []);
-
+  }, [])
+);
   // Delete product
   const handleDelete = (id) => {
     Alert.alert(
@@ -80,8 +82,8 @@ const ViewProduct = ({ navigation }) => {
       filter === 'All'
         ? true
         : filter === 'Low Stock'
-        ? p.stock_quantity < 10
-        : p.category_id === parseInt(filter) // match category ID
+        ? p.stockQuantity < 10
+        : p.categoryId === parseInt(filter) // match category ID
     )
     .filter((p) =>
       p.name.toLowerCase().includes(searchText.toLowerCase())
@@ -105,7 +107,7 @@ const ViewProduct = ({ navigation }) => {
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <Image
-        source={{ uri: 'https://media.istockphoto.com/id/1157106624/photo/all-your-necessities-stored-in-one-place.webp?s=1024x1024&w=is&k=20&c=8Wpn6NRdkVmXtR5jxGmxnyqu_wY3kF6yMMXWHla0t5Y=' }}
+        source={{ uri: item.imageUrl.replace("http://testapp-production-ad8c.up.railway.app/", "") || 'https://media.istockphoto.com/id/1157106624/photo/all-your-necessities-stored-in-one-place.webp?s=1024x1024&w=is&k=20&c=8Wpn6NRdkVmXtR5jxGmxnyqu_wY3kF6yMMXWHla0t5Y=' }}
         style={styles.image}
         resizeMode="cover"
       />
@@ -113,7 +115,7 @@ const ViewProduct = ({ navigation }) => {
         <Text style={styles.name}>{item.name || 'N/A'}</Text>
         <Text style={styles.info}>Price: ${item.price ?? 'N/A'}</Text>
         <Text style={styles.info}>Quantity: {item.stockQuantity ?? 'N/A'}</Text>
-        <Text style={styles.info}>Brand: {item.brand_id ?? 'N/A'}</Text>
+        <Text style={styles.info}>Brand: {item.brandName ?? 'N/A'}</Text>
 
         <View style={styles.buttonRow}>
           <Button

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, act,useCallback } from 'react';
 import {
   ScrollView,
   View,
@@ -8,20 +8,25 @@ import {
   Image,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Button,Checkbox } from 'react-native-paper';
 import { useDispatch } from 'react-redux';
 import { addProduct, editProduct } from '../redux/store'; // adjust path if needed
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useRoute } from '@react-navigation/native';
-import { addProduct as apiAddProduct, updateProduct as apiUpdateProduct } from '../api/productApi'; // Import API functions
+import { useRoute,useFocusEffect } from '@react-navigation/native';
+import { addProduct as apiAddProduct, updateProduct as apiUpdateProduct ,uploadImage} from '../api/productApi'; // Import API functions
+import VariantSelector from '../components/VariantSelector';
+import { getAllBrands } from '../api/brandApi';
+import { getAllCategories} from '../api/categoryAPI';
+import { Picker } from '@react-native-picker/picker';
 
 const AddProduct = ({ navigation }) => {
   const dispatch = useDispatch();
   const route = useRoute();
   const productToEdit = route.params?.product; // undefined if adding new
-
+  console.log('Product to edit:', productToEdit);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [stockQuantity, setStockQuantity] = useState('');
@@ -29,40 +34,127 @@ const AddProduct = ({ navigation }) => {
   const [lowStockThreshold, setLowStockThreshold] = useState('10');
   const [barcode, setBarcode] = useState('');
   const [brand, setBrand] = useState('1');
+  const [imageUrl, setImageUrl] = useState(null);
   const [image, setImage] = useState(null);
   const [active, setActive] = useState(true);
+  const [variantWeight, setVariantWeight] = useState('200'); // default
+  const [variantUnit, setVariantUnit] = useState('ML'); // default
+  const [variants, setVariants] = useState([
+    { id: 0, weightUnit: 'ML', weightValue: '', price: '', stockQuantity: '' },
+  ]);
+  const [sBrand, setSBrand] = useState([]);
+  const [sCategory, setSCategory] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+      loadData();
+    }, []);
+
+   const loadData = async () => {
+    const brandData = await getAllBrands();
+    const categoryData = await getAllCategories();
+    setSBrand(brandData);
+    setSCategory(categoryData);
+  };
+ 
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+      if (productToEdit) {
+        prefillProduct(productToEdit);
+      } else {
+        // Reset form for new product
+        resetForm();
+      }
+    }, [productToEdit])
+  );
 
   // Pre-fill form if editing
-  useEffect(() => {
+  const prefillProduct = (productToEdit) => { 
     if (productToEdit) {
+      const imageUri = productToEdit.imageUrl.replace("http://testapp-production-ad8c.up.railway.app/", "")
       setName(productToEdit.name);
       setPrice(String(productToEdit.price));
-      setStockQuantity(String(productToEdit.setStockQuantity));
-      setCategory(productToEdit.category);
-      setImage(productToEdit.image);
+      setStockQuantity(String(productToEdit.stockQuantity));
+      setCategory(productToEdit?.categoryId || null);
+      setImageUrl(imageUri);
       setLowStockThreshold(String(productToEdit.lowStockThreshold));
       setBarcode(productToEdit.barcode);
-      setBrand(productToEdit.brand);
+      setBrand(productToEdit?.brandId || null);
       setActive(productToEdit.active);
+      if (productToEdit.variants && productToEdit.variants.length > 0) {
+        setVariants(productToEdit.variants.map(v => ({          
+          weightUnit: v.weightUnit || 'ML',
+          weightValue: String(v.weightValue),
+          price: String(productToEdit.price),
+          stockQuantity: String(productToEdit.stockQuantity),
+        })));
+      }
+    
     }
-  }, [productToEdit]);
+  };
+
+  const resetForm = () => {
+    setName('');
+    setPrice('');
+    setStockQuantity('');
+    setCategory(null);
+    setBrand(null);
+    setLowStockThreshold('10');
+    setBarcode('');
+    setActive(true);
+    setImageUrl('');
+    setVariants([]);
+  };
 
   // Request image picker permission
-  useEffect(() => {
-    (async () => {
+useEffect(() => {
+  (async () => {
+    try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      console.log('Permission status:', status); // Log the permission status
       if (status !== 'granted') {
         alert('Permission denied. We need access to your gallery.');
       }
-    })();
-  }, []);
+    } catch (error) {
+      console.error('Error requesting media library permissions:', error);
+      alert('An error occurred while requesting permission.');
+    }
+  })();
+}, []);
 
   const pickImage = async () => {
+    try {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.7,
     });
-    if (!result.canceled) setImage(result.assets[0].uri);
+    if (!result.canceled) {
+      const selected = result.assets[0];
+      setLoading(true);
+      const cloudinaryUrl = await uploadImage(selected);
+
+    if (cloudinaryUrl) {
+       setImageUrl(cloudinaryUrl.imageUrl); 
+       setImage(selected.uri)// assign returned URL to state
+      console.log('Uploaded image URL:', cloudinaryUrl.imageUrl);
+    }
+  }
+  } finally {
+    setLoading(false);  
+  };
+};
+
+  const addVariant = () => {
+    setVariants([...variants, { id: Date.now(), weightUnit: 'ML', weightValue: '', price: '', stockQuantity: '' }]);
+  };
+
+  const removeVariant = (id) => {
+    setVariants(variants.filter(v => v.id !== id));
+  };
+
+  const updateVariant = (id, key, value) => {
+    setVariants(variants.map(v => (v.id === id ? { ...v, [key]: value } : v)));
   };
 
   const saveProduct = async ()=> {
@@ -71,25 +163,33 @@ const AddProduct = ({ navigation }) => {
       return;
     }
     const productData = {
-      barcode,
-      stockQuantity,
-      active,
-      brand: { id: brand, name: 'Brand Name' }, // Adjust brand data if needed
-      price,
-      lowStockThreshold,
-      name,
-      category: { id: category, name: 'Category Name' }, // Adjust category if needed
-    };
+      active: active,
+      barcode: barcode,
+      brand: { id: brand },
+      category: { id: category },       
+      lowStockThreshold: Number(lowStockThreshold),
+      imageUrl,
+      name: name,
+      price: Number(price),
+      stockQuantity: Number(stockQuantity),    
+      variant: {
+        weightUnit: variantUnit.toLowerCase(),
+        weightValue: Number(variantWeight),
+        price: Number(price),
+        stockQuantity: Number(stockQuantity),
+      }
+    };   
+
     try {
       let response;
       if (productToEdit) {
         // If editing product, use update API
-        response = await apiUpdateProduct(productToEdit.id, productData, image);
+        response = await apiUpdateProduct(productToEdit.id, productData);
         dispatch(editProduct({ ...productToEdit, ...response }));
         Alert.alert('Success', 'Product updated!');
       } else {
         // If adding a new product, use add API
-        response = await apiAddProduct(productData, image);
+        response = await apiAddProduct(productData);
         dispatch(addProduct(response));
         Alert.alert('Success', `Product "${name}" added!`);
       }
@@ -112,14 +212,25 @@ const AddProduct = ({ navigation }) => {
           {productToEdit ? 'Edit Product' : 'Add Product'}
         </Text>
       </View>
-
+        {loading && (
+          <View style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.3)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 999
+          }}>
+            <ActivityIndicator size="large" color="#fff" />
+          </View>
+        )}
       {/* Form Container */}
       <View style={styles.container}>
         <View style={styles.card}>
           {/* Image Picker */}
           <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
-            {image ? (
-              <Image source={{ uri: image }} style={styles.productImage} />
+            {imageUrl ? (
+              <Image source={{ uri: imageUrl}} style={styles.productImage} />
             ) : (
               <View style={styles.placeholder}>
                 <MaterialIcons name="camera-alt" size={32} color="#aaa" />
@@ -139,7 +250,12 @@ const AddProduct = ({ navigation }) => {
               onChangeText={setName}
             />
           </View>
-
+          <VariantSelector
+                    variantValue={variantWeight}
+                    setVariantValue={setVariantWeight}
+                    variantUnit={variantUnit}
+                    setVariantUnit={setVariantUnit}
+                  />     
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Price ($)</Text>
             <TextInput
@@ -186,24 +302,28 @@ const AddProduct = ({ navigation }) => {
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Brand</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter brand"
-              placeholderTextColor="#999"
-              value={brand}
-              onChangeText={setBrand}
-            />
+            <Text style={styles.label}>Product Brand</Text>
+         <Picker
+          selectedValue={brand}
+          onValueChange={(value) => setBrand(value)}
+           >
+          <Picker.Item label="Select Brand" value={null} />
+          {sBrand.map((brands) => (
+            <Picker.Item key={brands.id} label={brands.name} value={brands.id} />
+          ))}
+        </Picker>
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Category</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter category"
-              placeholderTextColor="#999"
-              value={category}
-              onChangeText={setCategory}
-            />
+            <Text style={styles.label}>Product Category</Text>
+           <Picker
+            selectedValue={category}
+            onValueChange={(value) => setCategory(value)}
+           >
+          <Picker.Item label="Select Category" value={null} />
+          {sCategory.map((categorys) => (
+            <Picker.Item key={categorys.id} label={categorys.name} value={categorys.id} />
+          ))}
+        </Picker>
           </View>
             {/* Checkbox from react-native-paper */}
             <View style={styles.checkboxContainer}>

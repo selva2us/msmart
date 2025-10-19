@@ -1,58 +1,36 @@
-import axios from 'axios';
+import { Platform } from 'react-native';
 
-const BASE_URL = 'https://testapp-production-ad8c.up.railway.app/api/products'; // Replace with your actual API URL
+import { getHeaders,BASE_URL } from "./configApi";
+const PRODUCT_URL = BASE_URL + '/api/products';
 
-const getHeaders = () => ({
-  accept: '*/*',
-  deviceId: 'DEVICE123', // Replace with actual device ID
-  Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzYwNjk0NDg0LCJleHAiOjE3NjA2OTgwODR9.wXoeE0amEQWrQ6r20Xk1Y0FOEwxYjKsxRZK2VA6uFGs', // Must have ADMIN role
-});
 
-export const addProduct = async (productData, image) => {
+export const addProduct = async (productData) => {
   try {
     console.log('--- Starting upload ---');
 
     const formData = new FormData();
     // Send JSON as string
     formData.append('product', JSON.stringify(productData));
-    console.log('Product JSON appended:', productData);
+    console.log('Product JSON appended:', productData); 
 
-    if (image) {
-      console.log('Image URI:', image);
-      formData.append('image', {
-        uri: image,
-        name: image.split('/').pop(),
-        type: 'image/jpeg',
-      });
-    }
-
-    console.log('FormData entries:');
-    formData._parts.forEach(([key, value]) => {
-      if (value && value.uri) {
-        console.log(`Key: ${key}, Name: ${value.name}, Type: ${value.type}, URI: ${value.uri}`);
-      } else {
-        console.log(`Key: ${key}, Value:`, value);
-      }
-    });
-
-    const response = await fetch(BASE_URL, {
+    const response = await fetch(PRODUCT_URL, {
       method: 'POST',
       headers: getHeaders(),
-      body: formData,
+      body: JSON.stringify(productData),
     });
 
-    if (!response.ok) {
+   if (!response.ok) {
       const errorText = await response.text();
       console.error(`Server returned HTTP ${response.status}:`, errorText);
       throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('Upload successful. Response data:', data);
+    console.log('Product created successfully:', data);
     return data;
 
   } catch (error) {
-    console.error('Upload failed:', error);
+    console.error('Product creation failed:', error);
     throw error;
   } finally {
     console.log('--- Upload attempt finished ---');
@@ -60,26 +38,16 @@ export const addProduct = async (productData, image) => {
 };
 
 
+
 // -----------------------------
 // Update an existing product
 // -----------------------------
-export const updateProduct = async (productId, productData, image) => {
+export const updateProduct = async (productId, productData) => {
   try {
-    const formData = new FormData();
-    formData.append('product', JSON.stringify(productData));
-
-    if (image) {
-      formData.append('image', {
-        uri: image,
-        name: image.split('/').pop(),
-        type: 'image/jpeg',
-      });
-    }
-
-    const response = await fetch(`${BASE_URL}/${productId}`, {
+    const response = await fetch(`${PRODUCT_URL}/${productId}`, {
       method: 'PUT',
       headers: getHeaders(),
-      body: formData,
+      body: JSON.stringify(productData),
     });
 
     if (!response.ok) {
@@ -99,7 +67,7 @@ export const updateProduct = async (productId, productData, image) => {
 // -----------------------------
 export const getAllProducts = async () => {
   try {
-    const response = await fetch(BASE_URL, {
+    const response = await fetch(PRODUCT_URL, {
       method: 'GET',
       headers: getHeaders(),
     });
@@ -121,11 +89,11 @@ export const getAllProducts = async () => {
 // -----------------------------
 export const getProductById = async (productId) => {
   try {
-    const response = await fetch(`${BASE_URL}/${productId}`, {
+    const response = await fetch(`${PRODUCT_URL}/${productId}`, {
       method: 'GET',
       headers: getHeaders(),
     });
-
+    console.log(`Get product ${productId}:`, response.text());
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`HTTP ${response.status}: ${errorText}`);
@@ -143,7 +111,7 @@ export const getProductById = async (productId) => {
 // -----------------------------
 export const deleteProduct = async (productId) => {
   try {
-    const response = await fetch(`${BASE_URL}/${productId}`, {
+    const response = await fetch(`${PRODUCT_URL}/${productId}`, {
       method: 'DELETE',
       headers: getHeaders(),
     });
@@ -159,3 +127,78 @@ export const deleteProduct = async (productId) => {
     throw error;
   }
 };
+
+export const getLowStockProduct = async () => {
+  try {
+    const response = await fetch(`${PRODUCT_URL}/low-stock`, {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Get LowStock products failed:', error);
+    throw error;
+  }
+};
+
+export const uploadImage = async (image) => {
+  try {
+    console.log('--- Upload Started ---');
+    console.log('Original image object:', image);
+
+    const uri = Platform.OS === 'android' ? image.uri : image.uri.replace('file://', '');
+    const fileName = image.fileName || `photo.${uri.split('.').pop()}`;
+    const fileType = image.mimeType || 'image/jpeg'; // FIXED: use correct MIME type
+
+    console.log('Using URI:', uri);
+    console.log('File name:', fileName);
+    console.log('File type:', fileType);
+
+    const formData = new FormData();
+    formData.append('file', { uri, name: fileName, type: fileType });
+
+    console.log('--- FormData contents ---');
+    formData._parts.forEach(([key, value]) => {
+      console.log(`Key: ${key}`);
+      console.log(`  Name: ${value.name}`);
+      console.log(`  Type: ${value.type}`);
+      console.log(`  URI: ${value.uri}`);
+    });
+
+    const headers = getHeaders();
+    delete headers['Content-Type'];
+    console.log('--- Headers ---', headers);
+
+    const response = await fetch(`${PRODUCT_URL}/upload-image`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    console.log('Fetch request sent...');
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Server returned HTTP ${response.status}:`, errorText);
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('Upload successful! Response data:', data);
+    return data;
+
+  } catch (error) {
+    console.error('Upload failed:', error);
+    throw error;
+  } finally {
+    console.log('--- Upload attempt finished ---');
+  }
+};
+
+
