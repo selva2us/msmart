@@ -1,46 +1,60 @@
 import React from 'react';
-import { View, Text, StyleSheet ,TouchableOpacity} from 'react-native';
-import { Card } from 'react-native-paper';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-const MetricCard = ({ title, value, icon, color,onPress }) => {
+const MetricCard = ({ title, value, icon, color = '#2E7DFF', onPress }) => {
   return (
-    <TouchableOpacity activeOpacity={0.8} onPress={onPress}>
-    <Card style={[styles.card, { backgroundColor: color }]}>
-      <View style={styles.content}>
-        <MaterialCommunityIcons name={icon} size={32} color="#fff" />
-        <Text style={styles.value}>{value}</Text>
-        <Text style={styles.title}>{title}</Text>
+    <TouchableOpacity activeOpacity={0.85} onPress={onPress} style={styles.wrapper}>
+      <View style={styles.card}>
+        <View style={[styles.iconWrapper, { backgroundColor: color + '33' }]}>
+          <MaterialCommunityIcons name={icon} size={28} color={color} />
+        </View>
+        <View style={styles.textWrapper}>
+          <Text style={styles.value}>{value}</Text>
+          <Text style={styles.title}>{title}</Text>
+        </View>
       </View>
-    </Card>
-     </TouchableOpacity>
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    width: 165,
-    height: 150,
+  wrapper: {
     flex: 1,
-    margin: 8,
-    borderRadius: 16,
-    padding: 20,
-    elevation: 6,
+    margin: 6,
   },
-  content: {
+  card: {
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
   },
-  title: {
-    fontSize: 16,
-    color: '#fff',
-    marginTop: 4,
-    fontWeight: '600',
+  iconWrapper: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  textWrapper: {
+    flex: 1,
   },
   value: {
     fontSize: 22,
-    color: '#fff',
-    fontWeight: 'bold',
-    marginTop: 8,
+    fontWeight: '700',
+    color: '#111',
+  },
+  title: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
   },
 });
 

@@ -22,12 +22,7 @@ const BillReceiptScreen = ({ route,navigation }) => {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <MaterialCommunityIcons name="receipt" size={28} color="#fff" />
-        <Text style={styles.headerText}>Bill Receipt</Text>
-      </View>
-
+  
       {/* Shop Details */}
       <View style={styles.shopInfo}>
         <Text style={styles.shopName}>MSD SuperMarket</Text>
@@ -72,15 +67,15 @@ const BillReceiptScreen = ({ route,navigation }) => {
       {/* Summary */}
       <View style={styles.summaryRow}>
         <Text style={styles.summaryLabel}>Subtotal:</Text>
-        <Text style={styles.summaryValue}>₹{bill.totalAmount}</Text>
+        <Text style={styles.summaryValue}>₹{bill.totalAmount.toFixed(2)}</Text>
       </View>
       <View style={styles.summaryRow}>
         <Text style={styles.summaryLabel}>DiscountAmount:</Text>
-        <Text style={styles.summaryValue}>₹{bill.discountAmount}</Text>
+        <Text style={styles.summaryValue}>₹{bill.discountAmount.toFixed(2)}</Text>
       </View>
       <View style={styles.summaryRow}>
         <Text style={styles.summaryLabel}>Grand Total:</Text>
-        <Text style={styles.summaryValueBold}>₹{bill.finalAmount}</Text>
+        <Text style={styles.summaryValueBold}>₹{bill.finalAmount.toFixed(2)}</Text>
       </View>
 
       {/* Payment Info */}

@@ -6,8 +6,9 @@ import {
   Text,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
-import { Appbar, TextInput, Button, Card } from 'react-native-paper';
+import { Button, Card, TextInput } from 'react-native-paper';
 import {
   getAllCategories,
   addCategory as apiAddCategory,
@@ -17,6 +18,7 @@ import {
 
 const CategoryScreen = ({ navigation }) => {
   const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [categoryName, setCategoryName] = useState('');
   const [editingCategory, setEditingCategory] = useState(null);
@@ -27,12 +29,13 @@ const CategoryScreen = ({ navigation }) => {
 
   const fetchCategories = async () => {
     try {
+      setLoading(true);
       const data = await getAllCategories();
       setCategories(data);
-      console.log('[API] Categories fetched:', data);
     } catch (error) {
-      console.error(error);
       Alert.alert('Error', 'Failed to fetch categories.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -46,7 +49,9 @@ const CategoryScreen = ({ navigation }) => {
       if (editingCategory) {
         await apiUpdateCategory(editingCategory.id, { name: categoryName });
         setCategories(
-          categories.map(c => (c.id === editingCategory.id ? { ...c, name: categoryName } : c))
+          categories.map(c =>
+            c.id === editingCategory.id ? { ...c, name: categoryName } : c
+          )
         );
         Alert.alert('Success', 'Category updated!');
       } else {
@@ -54,22 +59,19 @@ const CategoryScreen = ({ navigation }) => {
         setCategories([...categories, newCategory]);
         Alert.alert('Success', 'Category added!');
       }
-      setModalVisible(false);
-      setCategoryName('');
-      setEditingCategory(null);
+      closeModal();
     } catch (error) {
-      console.error(error);
       Alert.alert('Error', 'Failed to save category.');
     }
   };
 
-  const handleEdit = category => {
+  const handleEdit = (category) => {
     setCategoryName(category.name);
     setEditingCategory(category);
     setModalVisible(true);
   };
 
-  const handleDelete = category => {
+  const handleDelete = (category) => {
     Alert.alert(
       'Confirm Delete',
       `Are you sure you want to delete category "${category.name}"?`,
@@ -84,7 +86,6 @@ const CategoryScreen = ({ navigation }) => {
               setCategories(categories.filter(c => c.id !== category.id));
               Alert.alert('Deleted', 'Category removed successfully!');
             } catch (error) {
-              console.error(error);
               Alert.alert('Error', 'Failed to delete category.');
             }
           },
@@ -93,50 +94,91 @@ const CategoryScreen = ({ navigation }) => {
     );
   };
 
+  const closeModal = () => {
+    setModalVisible(false);
+    setCategoryName('');
+    setEditingCategory(null);
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color="#2E7DFF" />
+      </View>
+    );
+  }
+
   return (
-    <View style={{ flex: 1 }}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => navigation.goBack()} />
-        <Appbar.Content title="Categories" />
-        <Appbar.Action icon="plus" onPress={() => setModalVisible(true)} />
-      </Appbar.Header>
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={{ color: '#fff', fontSize: 22 }}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Categories</Text>
+        <Button
+          mode="contained"
+          onPress={() => setModalVisible(true)}
+          style={styles.addButton}
+        >
+          Add Category
+        </Button>
+      </View>
 
-      <FlatList
-        data={categories}
-        keyExtractor={item => item.id.toString()}
-        contentContainerStyle={{ padding: 10 }}
-        renderItem={({ item }) => (
-          <Card style={styles.card}>
-            <View style={styles.cardContent}>
-              <Text style={styles.categoryName}>{item.name}</Text>
-              <View style={styles.actions}>
-                <TouchableOpacity onPress={() => handleEdit(item)}>
-                  <Text style={[styles.actionText, { color: '#1976d2' }]}>Edit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleDelete(item)}>
-                  <Text style={[styles.actionText, { color: '#f44336' }]}>Delete</Text>
-                </TouchableOpacity>
+      {/* Category List */}
+      {categories.length === 0 ? (
+        <Text style={styles.emptyText}>No categories found.</Text>
+      ) : (
+        <FlatList
+          data={categories}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={{ padding: 16 }}
+          renderItem={({ item }) => (
+            <Card style={styles.card}>
+              <View style={styles.cardContent}>
+                <Text style={styles.categoryName}>{item.name}</Text>
+                <View style={styles.actions}>
+                  <Button
+                    mode="contained"
+                    compact
+                    onPress={() => handleEdit(item)}
+                    style={[styles.button, { backgroundColor: '#2E7DFF' }]}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    mode="contained"
+                    compact
+                    onPress={() => handleDelete(item)}
+                    style={[styles.button, { backgroundColor: '#FF5252' }]}
+                  >
+                    Delete
+                  </Button>
+                </View>
               </View>
-            </View>
-          </Card>
-        )}
-      />
+            </Card>
+          )}
+        />
+      )}
 
+      {/* Add/Edit Modal */}
       {modalVisible && (
         <View style={styles.modal}>
           <Card style={styles.modalCard}>
-            <Card.Title title={editingCategory ? 'Edit Category' : 'Add Category'} />
+            <Card.Title
+              title={editingCategory ? 'Edit Category' : 'Add Category'}
+              titleStyle={{ fontWeight: '700', fontSize: 18 }}
+            />
             <Card.Content>
               <TextInput
                 label="Category Name"
                 value={categoryName}
                 onChangeText={setCategoryName}
+                style={styles.input}
               />
             </Card.Content>
             <Card.Actions style={{ justifyContent: 'flex-end' }}>
-              <Button onPress={() => { setModalVisible(false); setCategoryName(''); setEditingCategory(null); }}>
-                Cancel
-              </Button>
+              <Button onPress={closeModal}>Cancel</Button>
               <Button mode="contained" onPress={handleSave}>
                 Save
               </Button>
@@ -149,13 +191,60 @@ const CategoryScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  card: { marginBottom: 10 },
-  cardContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 10 },
-  categoryName: { fontSize: 16, fontWeight: '600' },
-  actions: { flexDirection: 'row', gap: 10 },
-  actionText: { fontWeight: '600' },
-  modal: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 16 },
-  modalCard: { borderRadius: 12, padding: 10 },
+  container: { flex: 1, backgroundColor: '#F7F9FC' },
+  loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    backgroundColor: '#2E7DFF',
+  },
+  headerTitle: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  addButton: { backgroundColor: '#4caf50' },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 12,
+    elevation: 3,
+  },
+  cardContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  categoryName: { fontSize: 16, fontWeight: '600', color: '#333' },
+  actions: { flexDirection: 'row' },
+  button: { marginLeft: 8 },
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 50,
+    fontSize: 16,
+    color: '#888',
+  },
+  modal: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  modalCard: {
+    borderRadius: 12,
+    padding: 10,
+  },
+  input: {
+    backgroundColor: '#fff',
+    marginTop: 8,
+  },
 });
 
 export default CategoryScreen;

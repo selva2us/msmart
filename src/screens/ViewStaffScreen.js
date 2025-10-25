@@ -8,11 +8,12 @@ import {
   TextInput,
   FlatList,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Button } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
-import { getAllStaffs,addStaff,updateStaff,deleteStaff } from '../api/staffAPI'; // Create this API file
+import { getAllStaffs, deleteStaff } from '../api/staffAPI';
 
 const PAGE_SIZE = 5;
 
@@ -23,7 +24,6 @@ const ViewStaffScreen = ({ navigation }) => {
   const [searchText, setSearchText] = useState('');
   const [page, setPage] = useState(1);
 
-  // Fetch staff
   const fetchStaff = async () => {
     try {
       setLoading(true);
@@ -43,7 +43,6 @@ const ViewStaffScreen = ({ navigation }) => {
     }, [])
   );
 
-  // Delete staff
   const handleDelete = (id) => {
     Alert.alert(
       'Delete Staff',
@@ -90,6 +89,7 @@ const ViewStaffScreen = ({ navigation }) => {
         <Text style={styles.name}>{item.name}</Text>
         <Text style={styles.info}>Email: {item.email}</Text>
         <Text style={styles.info}>Mobile: {item.mobile}</Text>
+        <Text style={styles.info}>Role: {item.role}</Text>
         <Text style={styles.info}>Active: {item.active ? 'Yes' : 'No'}</Text>
 
         <View style={styles.buttonRow}>
@@ -126,8 +126,8 @@ const ViewStaffScreen = ({ navigation }) => {
     <View style={{ flex: 1, backgroundColor: '#f2f2f2' }}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <MaterialIcons name="arrow-back" size={28} color="#fff" />
+         <TouchableOpacity onPress={() => navigation.goBack()}>
+           <Text style={{ color: '#fff', fontSize: 22 }}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>View Staff</Text>
       </View>
@@ -160,11 +160,35 @@ const ViewStaffScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#6a11cb' },
-  headerTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold', marginLeft: 16 },
+  header: {
+    backgroundColor: '#2E7DFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    elevation: 6,
+  },
+  headerTitle: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
+    marginLeft: 12,
+  },
   searchContainer: { padding: 16, backgroundColor: '#fff' },
   searchInput: { borderWidth: 1, borderColor: '#ccc', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8, fontSize: 16, color: '#333' },
-  card: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 16, padding: 12, marginBottom: 12, elevation: 4, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 6 },
+  card: { 
+    flexDirection: 'row', 
+    backgroundColor: '#fff', 
+    borderRadius: 16, 
+    padding: 12, 
+    marginBottom: 12, 
+    elevation: 4, 
+    shadowColor: '#000', 
+    shadowOpacity: 0.1, 
+    shadowRadius: 6 
+  },
   details: { flex: 1, justifyContent: 'center' },
   name: { fontSize: 16, fontWeight: 'bold', color: '#333' },
   info: { fontSize: 14, color: '#555', marginTop: 4 },

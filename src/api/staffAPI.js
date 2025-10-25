@@ -87,4 +87,50 @@ export const uploadImage = async () => {
     try {} catch (error) {
         
     }
-}
+};
+
+// Get today's sales amount for this staff
+export const getTodaysSales = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/sales/today`);
+    return response.data.total || 0; // assuming response: { total: 1234 }
+  } catch (error) {
+    console.error('getTodaysSales error:', error);
+    return 0;
+  }
+};
+
+// Get count of pending bills for this staff
+export const getPendingBills = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/bills/pending`);
+    return response.data.count || 0; // assuming response: { count: 5 }
+  } catch (error) {
+    console.error('getPendingBills error:', error);
+    return 0;
+  }
+};
+
+// Get low stock count
+export const getLowStockCount = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/products/low-stock-count`);
+    return response.data.count || 0; // assuming response: { count: 3 }
+  } catch (error) {
+    console.error('getLowStockCount error:', error);
+    return 0;
+  }
+};
+
+// Get recent transactions (limit = number of last transactions)
+export const getRecentTransactions = async (limit = 5) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/transactions/recent?limit=${limit}`);
+    return response.data.transactions || []; 
+    // assuming response: { transactions: [ {id, customerName, amount, status, date}, ... ] }
+  } catch (error) {
+    console.error('getRecentTransactions error:', error);
+    return [];
+  }
+};
+
