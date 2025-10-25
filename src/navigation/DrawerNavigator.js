@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, Alert } from 'react-native';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import AdminDashboard from '../screens/AdminDashboard';
@@ -7,6 +7,9 @@ import ViewProduct from '../screens/ViewProduct';
 import LowStockScreen from '../screens/LowStockScreen';
 import BrandScreen from '../screens/BrandScreen';
 import CategoryScreen from '../screens/CategoryScreen';
+import ViewStaffScreen from '../screens/ViewStaffScreen';
+import AddStaffScreen from '../screens/AddStaffScreen';
+
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
@@ -16,6 +19,17 @@ const Drawer = createDrawerNavigator();
 // Custom Drawer Content
 function CustomDrawerContent(props) {
   const navigation = useNavigation();
+  const [user, setUser] = useState({ name: 'Admin', email: '' });
+
+useEffect(() => {
+    const fetchUser = async () => {
+      const storedUser = await AsyncStorage.getItem('userData');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    };
+    fetchUser();
+  }, []);
 
   const handleLogout = async () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
@@ -25,6 +39,7 @@ function CustomDrawerContent(props) {
         style: 'destructive',
         onPress: async () => {
           await AsyncStorage.removeItem('userToken');
+           await AsyncStorage.removeItem('userData');
           navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
         },
       },
@@ -39,8 +54,8 @@ function CustomDrawerContent(props) {
           source={{ uri: 'https://i.pravatar.cc/100' }}
           style={styles.avatar}
         />
-        <Text style={styles.name}>Admin Name</Text>
-        <Text style={styles.email}>admin@example.com</Text>
+         <Text style={styles.name}>{'Admin Name'}</Text>
+        <Text style={styles.email}>{user.email || 'admin@example.com'}</Text>
       </View>
 
       {/* Menu Items */}
@@ -77,6 +92,17 @@ function CustomDrawerContent(props) {
           icon={({ color, size }) => <Icon name="alert-circle-outline" color={color} size={size} />}
           onPress={() => navigation.navigate('MainApp', { screen: 'Low Stocks' })}
         />
+          <DrawerItem
+          label="Add Staffs"
+          icon={({ color, size }) => <Icon name="alert-circle-outline" color={color} size={size} />}
+          onPress={() => navigation.navigate('MainApp', { screen: 'Add Staffs' })}
+        />
+
+        <DrawerItem
+          label="View Staffs"
+          icon={({ color, size }) => <Icon name="alert-circle-outline" color={color} size={size} />}
+          onPress={() => navigation.navigate('MainApp', { screen: 'View Staffs' })}
+        />
       </View>
 
       {/* Logout at bottom */}
@@ -108,6 +134,8 @@ export default function DrawerNavigator() {
        <Drawer.Screen name="Add Brand" component={BrandScreen} />
        <Drawer.Screen name="Add Category" component={CategoryScreen} />
       <Drawer.Screen name="Low Stocks" component={LowStockScreen} />
+       <Drawer.Screen name="Add Staffs" component={AddStaffScreen} />
+         <Drawer.Screen name="View Staffs" component={ViewStaffScreen} />
     </Drawer.Navigator>
   );
 }

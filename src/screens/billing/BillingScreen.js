@@ -1,4 +1,4 @@
-import React, { useState, useEffect,useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -13,8 +13,9 @@ import {
   Modal,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useNavigation ,useFocusEffect} from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Swipeable, GestureHandlerRootView } from "react-native-gesture-handler";
 import { getAllProducts } from "../../api/productApi";
 
 const BillingScreen = () => {
@@ -25,15 +26,17 @@ const BillingScreen = () => {
   const [loading, setLoading] = useState(true);
   const [showSavedBillsModal, setShowSavedBillsModal] = useState(false);
   const [savedBills, setSavedBills] = useState([]);
+  const [message, setMessage] = useState("");
 
- useFocusEffect(
-      useCallback(() => {        
+  useFocusEffect(
+    useCallback(() => {
       const loadData = async () => {
-          await fetchProducts();
-          await loadSavedBills();
-      }; loadData();
-      }, [])
-    ); 
+        await fetchProducts();
+        await loadSavedBills();
+      };
+      loadData();
+    }, [])
+  );
 
   const fetchProducts = async () => {
     try {
@@ -62,22 +65,50 @@ const BillingScreen = () => {
       console.error("Failed to load saved bills", error);
     }
   };
+const saveCurrentBill = async () => {
+  if (!cart.length) return; // already handled in handleAddNewBill
 
-  const saveCartTemporarily = async () => {
-    try {
-      if (cart.length === 0) {
-        Alert.alert("Cart is empty", "Nothing to save");
-        return;
-      }
-      await AsyncStorage.setItem("currentCart", JSON.stringify(cart));
-      Alert.alert("Saved!", "Cart saved temporarily.");
-    } catch (error) {
-      console.error("Failed to save cart", error);
+  try {
+    const billId = `BILL-${Date.now()}`;
+    const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+    const newBill = {
+      id: billId,
+      cart,
+      total,
+      createdAt: new Date().toLocaleString(),
+    };
+
+    const storedBills = await AsyncStorage.getItem("savedBills");
+    const bills = storedBills ? JSON.parse(storedBills) : [];
+    bills.push(newBill);
+    await AsyncStorage.setItem("savedBills", JSON.stringify(bills));
+
+    setSavedBills(bills);
+    setMessage("Bill saved successfully!");
+    setTimeout(() => setMessage(""), 3000);
+  } catch (error) {
+    console.error("Failed to save bill:", error);
+    setMessage("Failed to save the bill. Try again.");
+    setTimeout(() => setMessage(""), 3000);
+  }
+};
+
+const handleAddNewBill = async () => {
+  if (!cart.length && savedBills.length === 0) {
+    setMessage("Cart is empty. Nothing to save.");
+    setTimeout(() => setMessage(""), 3000);
+    return;
+  }
+  if (savedBills.length > 0) {
+      setShowSavedBillsModal(true);
     }
-  };
 
-  const saveCurrentBill = async () => {
-    if (cart.length === 0) return alert("Cart is empty!");
+  const lastSaved = savedBills[savedBills.length - 1];
+  const isCartChanged = !lastSaved || JSON.stringify(lastSaved.cart) !== JSON.stringify(cart);
+
+  if (isCartChanged) {
+    // Save new bill
     const newBill = {
       id: `BILL-${Date.now()}`,
       cart,
@@ -85,54 +116,15 @@ const BillingScreen = () => {
       createdAt: new Date().toLocaleString(),
     };
     const updatedBills = [...savedBills, newBill];
-    setSavedBills(updatedBills);
+    saveCurrentBill(updatedBills);
     await AsyncStorage.setItem("savedBills", JSON.stringify(updatedBills));
-    alert("Bill saved successfully!");
-  };
+    setMessage("Bill saved successfully!");
+    setTimeout(() => setMessage(""), 3000);
+  }
 
-  const handleAddNewBill = async () => {
-    await saveCurrentBill();
-    await loadSavedBills();
-    setShowSavedBillsModal(true);
-  };
-
-  const handleSavedBillPress = (bill) => {
-  Alert.alert(
-    `Bill ${bill.id}`,
-    "Do you want to resume or delete this saved bill?",
-    [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          const updatedBills = savedBills.filter((b) => b.id !== bill.id);
-          setSavedBills(updatedBills);
-          await AsyncStorage.setItem("savedBills", JSON.stringify(updatedBills));
-        },
-      },
-      {
-        text: "Resume",
-        onPress: () => {
-          setCart(bill.cart);
-          setShowSavedBillsModal(false);
-        },
-      },
-    ]
-  );
+  // Open Saved Bills modal
+  setShowSavedBillsModal(true);
 };
-  const resumeBill = (bill) => {
-    setCart(bill.cart);
-    setShowSavedBillsModal(false);
-  };
-
-  const startFreshBill = () => {
-    setCart([]);
-    setShowSavedBillsModal(false);
-  };
 
   const addToCart = (product) => {
     const existing = cart.find((item) => item.id === product.id);
@@ -143,9 +135,11 @@ const BillingScreen = () => {
             item.id === product.id ? { ...item, qty: item.qty + 1 } : item
           )
         );
+      } else {
+        Alert.alert("Stock Limit", "Maximum stock reached for this product.");
       }
     } else if (product.stock > 0) {
-      setCart([...cart, { ...product, qty: 1, image: product.imageUrl }]);
+      setCart([{ ...product, qty: 1 }, ...cart]);
     }
   };
 
@@ -159,10 +153,7 @@ const BillingScreen = () => {
     );
   };
 
-  const totalAmount = cart.reduce(
-    (sum, item) => sum + item.price * item.qty,
-    0
-  );
+  const totalAmount = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
 
   if (loading) {
     return (
@@ -177,105 +168,137 @@ const BillingScreen = () => {
   );
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <MaterialCommunityIcons name="cart-outline" size={26} color="#fff" />
-        <Text style={styles.headerText}>Billing Counter</Text>
-        <TouchableOpacity
-          style={{ marginLeft: "auto" }}
-          onPress={handleAddNewBill}
-        >
-          <MaterialCommunityIcons name="file-plus" size={28} color="#fff" />
-        </TouchableOpacity>
-      
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <MaterialCommunityIcons name="cart-outline" size={26} color="#fff" />
+          <Text style={styles.headerText}>Billing Counter</Text>
+          <TouchableOpacity style={{ marginLeft: "auto" }} onPress={handleAddNewBill}>
+            <MaterialCommunityIcons name="file-plus" size={28} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      {message ? (
+      <View style={styles.messageBanner}>
+        <Text style={styles.messageText}>{message}</Text>
       </View>
+       ) : null}
 
-      {/* Search */}
-      <View style={styles.searchContainer}>
-        <MaterialCommunityIcons name="magnify" size={22} color="#666" />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search product..."
-          value={search}
-          onChangeText={setSearch}
-        />
-      </View>
+        {/* Search */}
+        <View style={styles.searchContainer}>
+          <MaterialCommunityIcons name="magnify" size={22} color="#666" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search product..."
+            value={search}
+            onChangeText={setSearch}
+          />
+        </View>
 
-      {/* Horizontal Product List */}
-      <View style={styles.productListContainer}>
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={filteredProducts}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.productCard}
-              onPress={() => addToCart(item)}
-            >
-              <Image
-                source={{ uri: item.imageUrl.replace("http://testapp-production-ad8c.up.railway.app/", "")  }}
-                style={styles.productImage}
-                resizeMode="cover"
-              />
-              <Text style={styles.productName}>{item.name}</Text>
-              <Text style={styles.productPrice}>₹{item.price}</Text>
-              <Text style={styles.productStock}>Stock: {item.stock}</Text>
-            </TouchableOpacity>
-          )}
-        />
-      </View>
-
-      {/* Modal for Saved Bills */}
-      <Modal visible={showSavedBillsModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContentLarge}>
-            <Text style={styles.modalTitle}>Saved Bills</Text>
-            {savedBills.length === 0 ? (
-              <Text style={styles.emptyCartText}>No saved bills available.</Text>
-            ) : (
-              <FlatList
-                data={savedBills}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <TouchableOpacity 
-                    style={styles.savedBillCard}
-                    onPress={() => handleSavedBillPress(item)}
-                  >
-                    <View>
-                      <Text style={styles.billId}>{item.id}</Text>
-                      <Text style={styles.billDate}>{item.createdAt}</Text>
-                    </View>
-                    <Text style={styles.billTotal}>₹{item.total}</Text>
-                  </TouchableOpacity>
-                )}
-              />
+        {/* Horizontal Product List */}
+        <View style={styles.productListContainer}>
+          <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={filteredProducts}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.productCard}
+                onPress={() => addToCart(item)}
+              >
+                <Image
+                  source={{ uri: item.imageUrl }}
+                  style={styles.productImage}
+                  resizeMode="cover"
+                />
+                <Text style={styles.productName}>{item.name}</Text>
+                <Text style={styles.productPrice}>₹{item.price.toFixed(2)}</Text>
+                <Text style={styles.productStock}>Stock: {item.stock}</Text>
+              </TouchableOpacity>
             )}
-            <TouchableOpacity
-              style={[styles.saveBtn, { backgroundColor: "#f44336", marginTop: 10 }]}
-              onPress={startFreshBill}
-            >
-              <Text style={styles.saveBtnText}>Start New Bill</Text>
+            contentContainerStyle={{ paddingBottom: 10 }}
+          />
+        </View>
+
+        {/* Saved Bills Modal */}
+       {/* Modal for Saved Bills */}
+  <Modal visible={showSavedBillsModal} transparent animationType="slide">
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalContentLarge}>
+       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <Text style={styles.modalTitle}>Saved Bills</Text>
+            <TouchableOpacity onPress={() => setShowSavedBillsModal(false)}>
+              <MaterialCommunityIcons name="close" size={24} color="#333" />
             </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
+      {savedBills.length === 0 ? (
+        <Text style={styles.emptyCartText}>No saved bills available.</Text>
+      ) : (
+        <FlatList
+          data={savedBills}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item: bill }) => (
+            <View style={styles.savedBillCard}>
+              <View>
+                <Text style={styles.billId}>{bill.id}</Text>
+                <Text style={styles.billDate}>{bill.createdAt}</Text>
+              </View>
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <TouchableOpacity
+                  style={[styles.smallBtn, { backgroundColor: "#4caf50" }]}
+                  onPress={() => {
+                    setCart(bill.cart);
+                    setShowSavedBillsModal(false);
+                  }}
+                >
+                  <Text style={styles.smallBtnText}>Resume</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.smallBtn, { backgroundColor: "#f44336" }]}
+                  onPress={async () => {
+                    const updatedBills = savedBills.filter((b) => b.id !== bill.id);
+                    setSavedBills(updatedBills);
+                    await AsyncStorage.setItem(
+                      "savedBills",
+                      JSON.stringify(updatedBills)
+                    );
+                  }}
+                >
+                  <Text style={styles.smallBtnText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        />
+      )}
 
-      {/* Cart Section */}
-      <View style={styles.cartSection}>
-        <Text style={styles.sectionTitle}>Cart</Text>
-        <ScrollView style={{ flex: 1 }}>
-          {cart.length === 0 ? (
-            <Text style={styles.emptyCartText}>No items in cart</Text>
-          ) : (
-            cart.map((item) => {
-              const lowStock = item.qty >= item.stock;
-              return (
+      <TouchableOpacity
+        style={[styles.smallBtnText, { backgroundColor: "#f44336", marginTop: 10 }]}
+        onPress={() => {
+          setCart([]);
+          setShowSavedBillsModal(false);
+        }}
+      >
+        <Text style={[styles.saveBtnText, { fontSize: 16 }]}>Start New Bill</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
+
+
+        {/* Cart Section */}
+        <View style={[styles.cartSection, { opacity: cart.length === 0 ? 0.7 : 1 }]}>
+          <Text style={styles.sectionTitle}>Cart</Text>
+          <ScrollView style={{ flex: 1 }}>
+            {cart.length === 0 ? (
+              <Text style={styles.emptyCartText}>No items in cart</Text>
+            ) : (
+              cart.map((item) => (
                 <View
                   style={[
                     styles.cartItem,
-                    lowStock && { backgroundColor: "#fff3e0", borderRadius: 8 },
+                    item.qty >= item.stock && { backgroundColor: "#fff3e0", borderRadius: 8 },
                   ]}
                   key={item.id}
                 >
@@ -287,11 +310,7 @@ const BillingScreen = () => {
                   </View>
                   <View style={styles.cartActions}>
                     <TouchableOpacity onPress={() => removeFromCart(item)}>
-                      <MaterialCommunityIcons
-                        name="minus-circle"
-                        size={24}
-                        color="#f44336"
-                      />
+                      <MaterialCommunityIcons name="minus-circle" size={24} color="#f44336" />
                     </TouchableOpacity>
                     <Text style={styles.cartQty}>{item.qty}</Text>
                     <TouchableOpacity
@@ -305,45 +324,58 @@ const BillingScreen = () => {
                       />
                     </TouchableOpacity>
                     <Text style={styles.cartItemPrice}>
-                      ₹{item.price * item.qty}
+                      ₹{(item.price * item.qty).toFixed(2)}
                     </Text>
                   </View>
                 </View>
-              );
-            })
-          )}
-        </ScrollView>
+              ))
+            )}
+          </ScrollView>
 
-        {/* Cart Actions */}
-        <View style={styles.cartButtons}>       
+          {/* Cart Actions */}
+          <View style={styles.cartButtons}>
+            {cart.length > 0 && (
+              <>
+                <TouchableOpacity
+                  style={[styles.saveBtn, { backgroundColor: "#4caf50" }]}
+                  onPress={() =>
+                    navigation.navigate("StaffApp", {
+                      screen: "Payment",
+                      params: {
+                        billData: {
+                          billNumber: `BILL-${Date.now()}`,
+                          date: new Date().toLocaleString(),
+                          cashier: "Ramesh (Staff-02)",
+                          items: cart,
+                          subtotal: totalAmount,
+                          tax: totalAmount * 0.00,
+                          grandTotal: totalAmount,
+                        },
+                      },
+                    })
+                  }
+                >
+                  <Text style={styles.saveBtnText}>Proceed to Pay</Text>
+                </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.saveBtn, { backgroundColor: "#4caf50" }]}
-            onPress={() =>
-              navigation.navigate("StaffApp", {
-                screen: "Payment",
-                params: {
-                  billData: {
-                    billNumber: `BILL-${Date.now()}`,
-                    date: new Date().toLocaleString(),
-                    cashier: "Ramesh (Staff-02)",
-                    items: cart,
-                    subtotal: totalAmount,
-                    tax: totalAmount * 0.00, 
-                    grandTotal: totalAmount,
-                  },
-                },
-              })
-            }
-          >
-            <Text style={styles.saveBtnText}>Proceed to Pay</Text>
-          </TouchableOpacity>
+                {/* Clear Cart Button */}
+                <TouchableOpacity
+                  style={[styles.saveBtn, { backgroundColor: "#f44336" }]}
+                  onPress={() => setCart([])}
+                >
+                  <Text style={styles.saveBtnText}>Clear Cart</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+
+          {/* Total */}
+          <Text style={[styles.totalText, { color: cart.length === 0 ? "#aaa" : "#000" }]}>
+            Total: ₹{totalAmount.toFixed(2)}
+          </Text>
         </View>
-
-        {/* Total */}
-        <Text style={styles.totalText}>Total: ₹{totalAmount}</Text>
       </View>
-    </View>
+    </GestureHandlerRootView>
   );
 };
 
@@ -382,4 +414,19 @@ const styles = StyleSheet.create({
   billId: { fontWeight: "600" },
   billDate: { fontSize: 12, color: "#666" },
   billTotal: { fontWeight: "700", color: "#4caf50" },
+  summaryText: { fontSize: 16, fontWeight: "600", textAlign: "right", marginTop: 2 },
+  smallBtn: { padding: 6, borderRadius: 6, minWidth: 70, alignItems: "center" },
+  smallBtnText: { color: "#fff", fontWeight: "700", fontSize: 12 },
+  messageBanner: {
+  backgroundColor: "#4caf50",
+  padding: 8,
+  marginHorizontal: 10,
+  marginTop: 10,
+  borderRadius: 8,
+  alignItems: "center",
+},
+messageText: {
+  color: "#fff",
+  fontWeight: "600",
+},
 });

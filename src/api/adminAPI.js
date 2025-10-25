@@ -4,13 +4,17 @@ import { getHeaders,BASE_URL } from "./configApi";
 
 const ADMIN_URL = BASE_URL + '/api/admin/dashboard';
 
-
+  
 export const getAdminDashboardStats = async () => {
     console.log("💳 Starting getAdminDashboardStats...");
+     console.log("📄 Admin URL:", ADMIN_URL);
+     const headers = await getHeaders();
+
+     console.log("📄 Header:",headers);
   try {
     const response = await fetch(`${ADMIN_URL}`, {
       method: "GET",
-      headers: getHeaders(),
+      headers: headers,
     });
     if (!response.ok) {
       const errorText = await response.text();

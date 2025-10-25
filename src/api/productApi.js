@@ -7,7 +7,7 @@ const PRODUCT_URL = BASE_URL + '/api/products';
 export const addProduct = async (productData) => {
   try {
     console.log('--- Starting upload ---');
-
+    const headers = await getHeaders();
     const formData = new FormData();
     // Send JSON as string
     formData.append('product', JSON.stringify(productData));
@@ -15,7 +15,7 @@ export const addProduct = async (productData) => {
 
     const response = await fetch(PRODUCT_URL, {
       method: 'POST',
-      headers: getHeaders(),
+      headers: headers,
       body: JSON.stringify(productData),
     });
 
@@ -44,9 +44,10 @@ export const addProduct = async (productData) => {
 // -----------------------------
 export const updateProduct = async (productId, productData) => {
   try {
+    const headers = await getHeaders();
     const response = await fetch(`${PRODUCT_URL}/${productId}`, {
       method: 'PUT',
-      headers: getHeaders(),
+      headers: headers,
       body: JSON.stringify(productData),
     });
 
@@ -67,9 +68,10 @@ export const updateProduct = async (productId, productData) => {
 // -----------------------------
 export const getAllProducts = async () => {
   try {
+    const headers = await getHeaders();
     const response = await fetch(PRODUCT_URL, {
       method: 'GET',
-      headers: getHeaders(),
+      headers: headers,
     });
 
     if (!response.ok) {
@@ -89,9 +91,10 @@ export const getAllProducts = async () => {
 // -----------------------------
 export const getProductById = async (productId) => {
   try {
+    const headers = await getHeaders();
     const response = await fetch(`${PRODUCT_URL}/${productId}`, {
       method: 'GET',
-      headers: getHeaders(),
+      headers: headers,
     });
     console.log(`Get product ${productId}:`, response.text());
     if (!response.ok) {
@@ -111,9 +114,10 @@ export const getProductById = async (productId) => {
 // -----------------------------
 export const deleteProduct = async (productId) => {
   try {
+    const headers = await getHeaders();
     const response = await fetch(`${PRODUCT_URL}/${productId}`, {
       method: 'DELETE',
-      headers: getHeaders(),
+      headers: headers,
     });
 
     if (!response.ok) {
@@ -130,9 +134,10 @@ export const deleteProduct = async (productId) => {
 
 export const getLowStockProduct = async () => {
   try {
+    const headers = await getHeaders();
     const response = await fetch(`${PRODUCT_URL}/low-stock`, {
       method: 'GET',
-      headers: getHeaders(),
+      headers:headers,
     });
 
     if (!response.ok) {
@@ -171,7 +176,7 @@ export const uploadImage = async (image) => {
       console.log(`  URI: ${value.uri}`);
     });
 
-    const headers = getHeaders();
+    const headers = await getHeaders();
     delete headers['Content-Type'];
     console.log('--- Headers ---', headers);
 

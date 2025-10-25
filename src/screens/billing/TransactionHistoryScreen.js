@@ -36,7 +36,7 @@ const TransactionHistoryScreen = () => {
           <Text style={styles.paymentMode}>{item.paymentMode}</Text>
         </View>
          <Text style={styles.billNumber}>Bill No: {item.billNumber || item.id}</Text>
-        <Text style={styles.totalValue}>₹{item.finalAmount}</Text>
+        <Text style={styles.totalValue}>₹{Number(item.finalAmount.toFixed(2)) }</Text>
       </TouchableOpacity>
     );
   };
@@ -83,10 +83,11 @@ const TransactionHistoryScreen = () => {
                   <Text style={{flex: 1.2, textAlign: 'right'}}>₹{item.totalPrice}</Text>
                 </View>
               ))}
-
+              <View style={styles.divider} />
               <View style={styles.summaryRow}>
+                
                 <Text style={{fontWeight:'600'}}>Subtotal:</Text>
-                <Text>₹{selectedBill?.totalAmount}</Text>
+                <Text>₹{Number(selectedBill?.totalAmount.toFixed(2))}</Text>
               </View>
               {selectedBill?.tax && (
                 <View style={styles.summaryRow}>
@@ -96,7 +97,7 @@ const TransactionHistoryScreen = () => {
               )}
               <View style={styles.summaryRow}>
                 <Text style={{fontWeight:'700'}}>Grand Total:</Text>
-                <Text>₹{selectedBill?.finalAmount}</Text>
+                <Text>₹{Number(selectedBill?.finalAmount.toFixed(2))}</Text>
               </View>
 
               <TouchableOpacity

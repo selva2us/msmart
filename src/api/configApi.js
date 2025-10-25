@@ -1,8 +1,17 @@
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+//import DeviceInfo from 'react-native-device-info';
+
 export const BASE_URL = 'https://testapp-production-ad8c.up.railway.app'; // Replace with your actual API URL
 
-export const getHeaders = () => ({
-  accept: '*/*',
- 'Content-Type': 'application/json',
-  deviceId: 'ABC123', // Replace with actual device ID
-  Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzYwODY1MTMxLCJleHAiOjE3NjA4Njg3MzF9.494rQ6xV-988c8xSkhZk6xNtyRVhN4npdCJXlgWN2Kw', // Must have ADMIN role
-});
+export const getHeaders = async () => {
+  const token = await AsyncStorage.getItem('userToken'); // get the latest token
+  //const deviceId = DeviceInfo.getUniqueId(); // get device ID
+
+  return {
+    accept: '*/*',
+    'Content-Type': 'application/json',
+    deviceId: "Test123",
+    Authorization: token ? `Bearer ${token}` : '', // dynamically set token
+  };
+};

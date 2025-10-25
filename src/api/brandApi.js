@@ -6,9 +6,10 @@ const BRAND_URL = BASE_URL + '/api/brands';
 export const getAllBrands = async () => {
   try {
     console.log('[API] Fetching all brands...');
+     const headers = await getHeaders();
     const response = await fetch(`${BRAND_URL}`, {
       method: "GET",
-      headers: getHeaders(),
+      headers: headers,
     });
 
     if (!response.ok) {
@@ -27,9 +28,10 @@ export const getAllBrands = async () => {
 export const addBrand = async (brand) => {
   try {
     console.log('[API] Adding brand:', brand);
+    const headers = await getHeaders();
     const response = await fetch(BRAND_URL, {
       method: 'POST',
-      headers: getHeaders(),
+      headers: headers,
       body: JSON.stringify(brand),
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -45,9 +47,10 @@ export const addBrand = async (brand) => {
 export const updateBrand = async (id, brand) => {
   try {
     console.log(`[API] Updating brand ${id}:`, brand);
+    const headers = await getHeaders();
     const response = await fetch(`${BRAND_URL}/${id}`, {
       method: 'PUT',
-      headers: getHeaders(),
+      headers: headers,
       body: JSON.stringify(brand),
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -62,9 +65,10 @@ export const updateBrand = async (id, brand) => {
 
 export const deleteBrand = async (id) => {
   try {
+    const headers = await getHeaders();
     const response = await fetch(`${BRAND_URL}/${id}`, {
       method: 'DELETE',
-      headers: getHeaders(),
+      headers: headers,
     });
 
     if (!response.ok) {

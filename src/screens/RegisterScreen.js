@@ -5,20 +5,23 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../redux/authSlice';
+import { registerUser } from '../api/authAPI';
 
 const RegisterScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
 
-  const [username, setUsername] = useState('');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState('');
+  const [mobile, setMobile] = useState('');
+  const [companyName, setCompanyName] = useState('');
 
   const handleRegister = async () => {
-    if (!username || !email || !password || !confirm) {
+    if (!name || !email || !password || !confirm) {
       setSnackbar('Please fill all fields.');
       return;
     }
@@ -27,19 +30,16 @@ const RegisterScreen = () => {
       return;
     }
 
-    setLoading(true);
+   setLoading(true);
     try {
-      const user = { username, email };
-      await AsyncStorage.setItem('userToken', 'demoToken');
-      await AsyncStorage.setItem('userData', JSON.stringify(user));
-      dispatch(setUser(user));
-      setSnackbar('Registration successful!');
-      setTimeout(() => navigation.replace('MainApp'), 1000);
+      const userData = { name, email, password, mobile, companyName };
+      const data = await registerUser(userData);
+      console.log('Registration success:', data);
+      setSnackbar('Account created successfully!');
+       setLoading(false);
+      navigation.navigate("Login");
     } catch (error) {
-      console.error(error);
-      setSnackbar('Something went wrong.');
-    } finally {
-      setLoading(false);
+      Alert.alert("Error", error.message);
     }
   };
 
@@ -52,12 +52,29 @@ const RegisterScreen = () => {
       <View style={styles.container}>
         <Text style={styles.title}>Create Account</Text>
         <TextInput
-          label="Username"
-          value={username}
-          onChangeText={setUsername}
+          label="Name"
+          value={name}
+          onChangeText={setName}
           mode="outlined"
           style={styles.input}
           left={<TextInput.Icon icon="account" />}
+        />
+        <TextInput
+          label="Mobile"
+          value={mobile}
+          onChangeText={setMobile}
+          mode="outlined"
+          keyboardType="phone-pad"
+          style={styles.input}
+          left={<TextInput.Icon icon="phone" />}
+        />
+        <TextInput
+          label="Company Name"
+          value={companyName}
+          onChangeText={setCompanyName}
+          mode="outlined"
+          style={styles.input}
+          left={<TextInput.Icon icon="office-building" />}
         />
         <TextInput
           label="Email"

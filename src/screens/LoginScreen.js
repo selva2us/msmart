@@ -5,12 +5,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../redux/authSlice';
+import { loginUser } from '../api/authAPI';
 
 const LoginScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
 
-  const [email, setEmail] = useState('');
+  const [emailOrMobile, setEmailOrMobile] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState('');
@@ -25,9 +26,9 @@ const LoginScreen = () => {
         dispatch(setUser(user));
 
         // Navigate to respective dashboard
-        if (user.role === 'admin') {
+        if (user.role === 'ADMIN') {
           navigation.replace('MainApp');
-        } else if (user.role === 'staff') {
+        } else if (user.role === 'CASHIER') {
           navigation.replace('StaffApp');
         } else {
           navigation.replace('MainApp'); // fallback
@@ -37,45 +38,38 @@ const LoginScreen = () => {
     checkUser();
   }, []);
 
-  // 🔐 Login handler
-  const handleLogin = async () => {
-    if (!email || !password) {
-      setSnackbar('Please fill in all fields.');
-      return;
+const handleLogin = async () => {
+  if (!emailOrMobile || !password) {
+    setSnackbar('Please fill in all fields.');
+    return;
+  }
+
+  setLoading(true);
+  try {
+   const { token, role, email } = await loginUser({ emailOrMobile, password });
+
+    // Save token & user data
+    const user = { email: email, role: role };
+    await AsyncStorage.setItem('userToken', token);
+    await AsyncStorage.setItem('userData', JSON.stringify(user));
+
+    dispatch(setUser(user));
+
+    if (role === 'ADMIN') {
+      navigation.replace('MainApp');
+    } else if (role === 'CASHIER') {
+      navigation.replace('StaffApp');
+    } else {
+      navigation.replace('MainApp'); // fallback
     }
 
-    setLoading(true);
-    try {
-      // Fake login (can be replaced by backend API later)
-      let user = null;
+  } catch (error) {
+    setSnackbar(error.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
-      if (email === 'admin@shop.com' && password === 'admin123') {
-        user = { name: 'Admin User', email, role: 'admin' };
-      } else if (email === 'staff@shop.com' && password === 'staff123') {
-        user = { name: 'Staff Member', email, role: 'staff' };
-      } else {
-        setSnackbar('Invalid credentials.');
-        setLoading(false);
-        return;
-      }
-
-      await AsyncStorage.setItem('userData', JSON.stringify(user));
-      await AsyncStorage.setItem('userToken', 'demoToken');
-      dispatch(setUser(user));
-
-      if (user.role === 'admin') {
-        navigation.replace('MainApp');
-      } else {
-        navigation.replace('StaffApp');
-      }
-
-    } catch (error) {
-      console.error(error);
-      setSnackbar('Login failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
   return (
     <ImageBackground
       source={{ uri: 'https://i.imgur.com/hg4sYBt.jpg' }}
@@ -87,8 +81,8 @@ const LoginScreen = () => {
 
         <TextInput
           label="Email"
-          value={email}
-          onChangeText={setEmail}
+          value={emailOrMobile}
+          onChangeText={setEmailOrMobile}
           mode="outlined"
           keyboardType="email-address"
           style={styles.input}

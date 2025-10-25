@@ -13,7 +13,7 @@ export const handleConfirmPayment = async (
     console.log("💳 Starting payment process...");
     console.log("📄 Bill Data:", JSON.stringify(billData, null, 2));
     console.log("💰 Payment Method:", paymentMethod, "Paid Amount:", paidAmount);
-
+    
     const total = billData.grandTotal;
     const paid = parseFloat(paidAmount);
 
@@ -114,9 +114,10 @@ const processOnlinePayment = async (amount, method) => {
 const saveTransaction = async (payload) => {
   try {
     console.log("🌐 Sending transaction to backend...", payload);
+    const headers = await getHeaders();
     const response = await fetch(`${BILLING_URL}`, {
       method: "POST",
-      headers: getHeaders(),
+      headers: headers,
       body: JSON.stringify(payload), // ✅ safe JSON
     });
 
@@ -138,9 +139,10 @@ export const getAllBills = async () => {
   console.log("🚀 getAllBills() called"); // log when function starts
   try {
     console.log("🌐 Sending GET request to backend:", `${BASE_URL}/bills`);
+        const headers = await getHeaders();
     const response = await fetch(`${BILLING_URL}`, {
       method: 'GET',
-      headers: getHeaders(),
+      headers: headers,
     });
     console.log("📡 Response received:", response);
 
